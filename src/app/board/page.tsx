@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { type BoardRow, getBoard } from "@/server/queries";
 import { AutoRefresh } from "./auto-refresh";
 import { BoardRowActions } from "./row-actions";
+import { WalkInDialog } from "./walk-in-dialog";
 
 // Per-user, session-gated page: render on the server before sending (no instant shell).
 export const instant = false;
@@ -82,6 +83,7 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
             <Link href={`/board?tab=${tab}`} className="font-medium text-foreground hover:underline" prefetch={false}>
               Refresh now
             </Link>
+            {user.role === "receptionist" && <WalkInDialog />}
           </div>
         }
       />

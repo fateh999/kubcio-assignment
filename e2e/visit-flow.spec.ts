@@ -138,3 +138,46 @@ test("the board updates on its own (polling) when someone else acts", async ({ b
   await watcher.context.close();
   await actor.context.close();
 });
+
+test("walk-in: reception adds a patient without an appointment; they join the nurse's queue", async ({ browser }) => {
+  const reception = await signedIn(browser, STAFF.reception);
+  const nurse = await signedIn(browser, STAFF.tom);
+  const r = reception.page;
+
+  await r.goto("/board?tab=all");
+  await r.getByRole("button", { name: "Add walk-in" }).click();
+  const dialog = r.getByRole("dialog");
+  // Input is checked on the server too.
+  await dialog.getByLabel("Full name").fill("Nina Walker");
+  await dialog.getByLabel("Reason for visit").fill("Cut hand, needs dressing");
+  await dialog.getByLabel("Phone").fill("+44 7700 900777");
+  await dialog.getByRole("button", { name: "Add and check in" }).click();
+  await expect(dialog.getByRole("alert")).toHaveText("Choose sex");
+  await dialog.getByLabel("Sex").click();
+  await r.getByRole("option", { name: "Female" }).click();
+  await dialog.getByRole("checkbox", { name: "Urgent" }).click();
+  await dialog.getByRole("button", { name: "Add and check in" }).click();
+  await expect(dialog).toBeHidden();
+
+  // Checked in now and urgent: after Samuel (urgent, arrived earlier), ahead of Zofia (not urgent).
+  await r.goto("/board?tab=checked_in");
+  // Relative order only: earlier tests in this file may have checked other patients in.
+  await expect(boardRow(r, "Nina Walker")).toBeVisible();
+  const order = await r.locator('tbody tr[data-testid^="visit-"]').evaluateAll((rows) => rows.map((x) => x.getAttribute("data-testid")));
+  expect(order.indexOf("visit-Samuel Adeyemi")).toBe(0);
+  expect(order.indexOf("visit-Nina Walker")).toBe(1);
+  expect(order.indexOf("visit-Zofia Mazur")).toBeGreaterThan(1);
+  const nina = boardRow(r, "Nina Walker");
+  await expect(nina).toContainText("Urgent");
+  await expect(nina).toContainText("Checked in");
+  await expect(nina).toContainText("0 min");
+
+  // Only reception sees the button; the nurse can take the walk-in like any patient.
+  await nurse.page.goto("/board");
+  await expect(nurse.page.getByRole("button", { name: "Add walk-in" })).toHaveCount(0);
+  await boardRow(nurse.page, "Nina Walker").getByRole("button", { name: "Take patient" }).click();
+  await expect(nurse.page.getByTestId("reason")).toHaveText("Cut hand, needs dressing");
+
+  await reception.context.close();
+  await nurse.context.close();
+});

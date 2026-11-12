@@ -8,7 +8,7 @@ import { requireUser } from "@/lib/require-user";
 import { ACTION_ROLES, type ActionResult } from "@/server/common";
 import { finish } from "@/server/finish";
 import * as logic from "@/server/visits";
-import type { VitalsInput } from "@/server/visits";
+import type { VitalsInput, WalkInInput } from "@/server/visits";
 
 export async function checkIn(visitId: string): Promise<ActionResult> {
   const user = await requireUser([...ACTION_ROLES.checkIn]);
@@ -23,6 +23,11 @@ export async function setUrgent(visitId: string, urgent: boolean): Promise<Actio
 export async function updateContact(patientId: string, contact: { phone: string; email: string }): Promise<ActionResult> {
   const user = await requireUser([...ACTION_ROLES.updateContact]);
   return finish(await logic.updateContact(db, user, patientId, contact));
+}
+
+export async function addWalkIn(walkIn: WalkInInput): Promise<ActionResult> {
+  const user = await requireUser([...ACTION_ROLES.addWalkIn]);
+  return finish(await logic.addWalkIn(db, user, walkIn));
 }
 
 export async function nurseTake(visitId: string): Promise<ActionResult> {

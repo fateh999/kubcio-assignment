@@ -27,6 +27,7 @@ export const ACTION_ROLES = {
   checkIn: ["receptionist"],
   setUrgent: ["receptionist"],
   updateContact: ["receptionist"],
+  addWalkIn: ["receptionist"],
   nurseTake: ["nurse"],
   saveVitals: ["nurse"],
   sendToDoctor: ["nurse"],

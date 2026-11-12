@@ -269,6 +269,7 @@ The roles live in one table, `ACTION_ROLES` (`src/server/common.ts`). `tests-db/
 | `checkIn(visitId)` | receptionist | stage = `scheduled` | stage → `checked_in`, `arrivedAt = now()` |
 | `setUrgent(visitId, urgent)` | receptionist | stage ≠ `done` | `urgent = urgent` |
 | `updateContact(patientId, phone, email)` | receptionist | — | patient phone/email updated |
+| `addWalkIn({ name, dob?, sex, phone, email?, reason, urgent })` | receptionist | — | **Walk-in** (added Nov 12, at the owner's request): in one transaction, a new patient record plus a visit with `appointmentAt = arrivedAt = now()` and stage `checked_in`, so they join the nurse's queue. Date of birth (not in the future) and email are optional; sex ∈ F/M/X (not stated) |
 | `nurseTake(visitId)` | nurse | stage = `checked_in` | stage → `with_nurse`, `nurseId = me` → open nurse page |
 | `saveVitals(visitId, { bpSys, bpDia, weightKg, tempC, nurseNote })` | nurse | stage = `with_nurse` AND `nurseId = me` | fields saved |
 | `sendToDoctor(visitId)` | nurse | stage = `with_nurse` AND `nurseId = me` | saves the form, then stage → `ready_for_doctor` |
@@ -390,7 +391,7 @@ Read queries live in `src/server/queries.ts`, one per screen. Each selects only 
   - `doctor` → `ready_for_doctor`
   - admin / none → All
 - **Row actions by role:**
-  - receptionist: "Check in" (scheduled), "Mark urgent" / "Unmark urgent", "Checkout" link (ready_for_checkout)
+  - receptionist: "Check in" (scheduled), "Mark urgent" / "Unmark urgent", "Checkout" link (ready_for_checkout); plus **"Add walk-in"** in the page header (dialog: name, reason, date of birth, sex, phone, email, urgent)
   - nurse: "Take patient" (checked_in), "Continue" for own `with_nurse` rows
   - doctor: "Take patient" (ready_for_doctor), "Continue" for own `with_doctor` rows
   - admin: none (read-only)
@@ -604,4 +605,4 @@ All four were reviewed and **decided on Nov 12, 2026**. #1 and #2 stay as open q
 
 ## 17. Out of scope
 
-Booking or editing appointments (seeded) · passwords, password reset, OAuth, two-factor authentication · fine-grained permissions · prescriptions, billing, messaging, notifications · editing diagnoses, medications or allergies · more than one study or a screen for writing study criteria · real email delivery · deleting anything · push updates (websockets/SSE; the board polls instead) · deployment.
+Booking or editing appointments (seeded; walk-ins are added as already checked in, §8.1) · matching a walk-in to an existing patient record (a walk-in always creates a new record) · passwords, password reset, OAuth, two-factor authentication · fine-grained permissions · prescriptions, billing, messaging, notifications · editing diagnoses, medications or allergies · more than one study or a screen for writing study criteria · real email delivery · deleting anything · push updates (websockets/SSE; the board polls instead) · deployment.

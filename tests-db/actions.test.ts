@@ -4,7 +4,7 @@
  * Creates its own staff, patient, visits, results and study candidates; removes them afterwards.
  */
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, like } from "drizzle-orm";
 import { db } from "../src/db";
 import { checkoutTasks, patients, results, studies, studyCandidates, user, visits } from "../src/db/schema";
 import { ALREADY_MOVED_ON } from "../src/lib/transition-visit";
@@ -69,6 +69,14 @@ afterAll(async () => {
   const testPatients = (await db.select({ id: patients.id }).from(patients)).map((p) => p.id).filter((id) => id.startsWith("t-") && id.includes(run));
   await db.delete(studyCandidates).where(inArray(studyCandidates.patientId, testPatients));
   await db.delete(patients).where(inArray(patients.id, testPatients));
+  // Walk-in patients get generated ids; find them by this run's name.
+  const walkIns = await db.select({ id: patients.id }).from(patients).where(like(patients.name, `Walk-in ${run}%`));
+  if (walkIns.length) {
+    // rerunMatching (below) creates a study row for every patient, walk-ins included.
+    await db.delete(studyCandidates).where(inArray(studyCandidates.patientId, walkIns.map((p) => p.id)));
+    await db.delete(visits).where(inArray(visits.patientId, walkIns.map((p) => p.id)));
+    await db.delete(patients).where(inArray(patients.id, walkIns.map((p) => p.id)));
+  }
   if (createdStudy) await db.delete(studies).where(eq(studies.id, studyId));
   await db.delete(user).where(inArray(user.id, everyone.map((a) => a.id)));
 });
@@ -108,6 +116,50 @@ describe("§8.1 reception", () => {
     expect(await visit.updateContact(db, reception, patientId, { phone: "123", email: "not-an-email" })).toEqual({ error: "Enter a valid email" });
     expect(await visit.updateContact(db, docA, patientId, { phone: "123", email: "a@b.co" })).toEqual({ error: NOT_ALLOWED });
     expect(await visit.updateContact(db, reception, "missing", { phone: "123", email: "a@b.co" })).toEqual({ error: "Patient not found" });
+  });
+});
+
+describe("§8.1 walk-ins", () => {
+  const walkIn = (extra: Record<string, unknown> = {}) => ({
+    name: `Walk-in ${run} A`,
+    dob: "1990-05-01",
+    sex: "F",
+    phone: "+44 7700 900555",
+    email: "",
+    reason: "Chest pain",
+    urgent: true,
+    ...extra,
+  });
+
+  test("reception adds a walk-in: new patient + a visit checked in now, in the nurse's queue", async () => {
+    const before = Date.now();
+    expect(await visit.addWalkIn(db, reception, walkIn())).toEqual({ ok: `Walk-in ${run} A added and checked in` });
+    const [row] = await db
+      .select({ stage: visits.stage, urgent: visits.urgent, reason: visits.reason, appointmentAt: visits.appointmentAt, arrivedAt: visits.arrivedAt, dob: patients.dob, email: patients.email })
+      .from(visits)
+      .innerJoin(patients, eq(patients.id, visits.patientId))
+      .where(eq(patients.name, `Walk-in ${run} A`));
+    expect(row).toMatchObject({ stage: "checked_in", urgent: true, reason: "Chest pain", dob: "1990-05-01", email: "" });
+    expect(row.arrivedAt!.getTime()).toBeGreaterThanOrEqual(before - 1000);
+    expect(row.appointmentAt.getTime()).toBe(row.arrivedAt!.getTime());
+    // It moves through the normal stages afterwards.
+    const [v] = await db.select({ id: visits.id }).from(visits).innerJoin(patients, eq(patients.id, visits.patientId)).where(eq(patients.name, `Walk-in ${run} A`));
+    expect(await visit.nurseTake(db, nurseA, v.id)).toEqual({ ok: "Patient is with you" });
+  });
+
+  test("date of birth and email are optional; input is checked", async () => {
+    expect(await visit.addWalkIn(db, reception, walkIn({ name: `Walk-in ${run} B`, dob: "", urgent: false }))).toMatchObject({ ok: expect.any(String) });
+    expect(await visit.addWalkIn(db, reception, walkIn({ name: "" }))).toEqual({ error: "Enter the patient's name" });
+    expect(await visit.addWalkIn(db, reception, walkIn({ reason: " " }))).toEqual({ error: "Enter the reason for the visit" });
+    expect(await visit.addWalkIn(db, reception, walkIn({ sex: "" }))).toEqual({ error: "Choose sex" });
+    expect(await visit.addWalkIn(db, reception, walkIn({ email: "nope" }))).toEqual({ error: "Enter a valid email or leave it blank" });
+    expect(await visit.addWalkIn(db, reception, walkIn({ dob: "2999-01-01" }))).toEqual({ error: "Date of birth can't be in the future" });
+    expect(await visit.addWalkIn(db, reception, walkIn({ dob: "01/05/1990" }))).toEqual({ error: "Date of birth must be a valid date" });
+  });
+
+  test("only reception can add walk-ins", async () => {
+    for (const a of [nurseA, docA, admin]) expect(await visit.addWalkIn(db, a, walkIn({ name: `Walk-in ${run} X` }))).toEqual({ error: NOT_ALLOWED });
+    expect(await db.select().from(patients).where(eq(patients.name, `Walk-in ${run} X`))).toHaveLength(0);
   });
 });
 
