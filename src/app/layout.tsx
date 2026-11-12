@@ -25,9 +25,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col bg-muted/40">
         {/* The header reads the session, so it streams in behind its own boundary. */}
-        <Suspense fallback={<div className="h-14 border-b" />}>
+        <Suspense fallback={<div className="h-14 border-b bg-background" />}>
           <AppHeader />
         </Suspense>
         {children}

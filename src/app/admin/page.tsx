@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { user } from "@/db/schema";
 import { requireUser } from "@/lib/require-user";
 import { isRole } from "@/lib/roles";
+import { PageHeader } from "@/components/ui-kit";
 import { StaffTable } from "./staff-table";
 
 // Per-user, session-gated page: render on the server before sending (no instant shell).
@@ -18,7 +19,7 @@ export default async function AdminPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <h1 className="mb-6 text-2xl font-semibold">Staff accounts</h1>
+      <PageHeader title="Staff accounts" description="Add staff, change roles, deactivate accounts. New staff get a sign-in link by email." />
       <StaffTable
         currentUserId={me.id}
         staff={staff.map((s) => ({ ...s, role: isRole(s.role) ? s.role : null, active: s.banned !== true }))}

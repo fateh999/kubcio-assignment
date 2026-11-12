@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PageHeader, TableCard } from "@/components/ui-kit";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/require-user";
@@ -16,17 +17,18 @@ export default async function ResultsPage() {
 
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <h1 className="mb-1 text-2xl font-semibold">Results to review</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        {rows.length} unreviewed, oldest first.{!isDoctor && " Only a doctor can mark a result reviewed."}
-      </p>
+      <PageHeader
+        title="Results to review"
+        description={`${rows.length} unreviewed, oldest first.${isDoctor ? "" : " Only a doctor can mark a result reviewed."}`}
+      />
+      <TableCard>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Patient</TableHead>
             <TableHead>Test</TableHead>
             <TableHead>Value</TableHead>
-            <TableHead>Resulted</TableHead>
+            <TableHead className="hidden sm:table-cell">Resulted</TableHead>
             {isDoctor && <TableHead className="text-right">Review</TableHead>}
           </TableRow>
         </TableHeader>
@@ -49,12 +51,15 @@ export default async function ResultsPage() {
                   r.patientName
                 )}
               </TableCell>
-              <TableCell>{r.test}</TableCell>
               <TableCell>
+                {r.test}
+                <span className="block text-xs text-muted-foreground sm:hidden">{formatDate(r.resultedAt)}</span>
+              </TableCell>
+              <TableCell className="tabular-nums font-medium">
                 {r.value}
                 {r.unit ? ` ${r.unit}` : ""}
               </TableCell>
-              <TableCell>{formatDate(r.resultedAt)}</TableCell>
+              <TableCell className="hidden tabular-nums text-muted-foreground sm:table-cell">{formatDate(r.resultedAt)}</TableCell>
               {isDoctor && (
                 <TableCell className="text-right">
                   <MarkReviewedButton resultId={r.id} label={`Mark ${r.patientName} ${r.test} reviewed`} />
@@ -64,6 +69,7 @@ export default async function ResultsPage() {
           ))}
         </TableBody>
       </Table>
+      </TableCard>
     </main>
   );
 }

@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { FieldCaption, PageHeader, StageBadge, UrgentBadge } from "@/components/ui-kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { localISODate } from "@/lib/dates";
 import { formatDate } from "@/lib/format";
 import { ageOn } from "@/lib/matcher";
 import { requireUser } from "@/lib/require-user";
-import { STAGE_LABEL } from "@/lib/visit-stages";
 import { getDoctorVisit } from "@/server/queries";
 import { DoctorWork, MarkReviewedButton } from "./doctor-work";
 
@@ -34,15 +34,17 @@ export default async function DoctorVisitPage({ params }: PageProps<"/visits/[id
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-8">
-      <Link href="/board" className="text-sm underline underline-offset-4">
+      <Link href="/board" className="text-sm text-muted-foreground hover:text-foreground">
         ← Visit board
       </Link>
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">{v.patientName}</h1>
-        <span className="text-muted-foreground">{age}</span>
-        {v.urgent && <Badge variant="destructive">Urgent</Badge>}
-        <Badge variant="secondary">{STAGE_LABEL[v.stage]}</Badge>
-      </div>
+      <PageHeader
+        title={
+          <>
+            {v.patientName} {v.urgent && <UrgentBadge />} <StageBadge stage={v.stage} />
+          </>
+        }
+        description={age}
+      />
       {!editable && (
         <p role="status" className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
           {v.stage === "ready_for_doctor"
@@ -54,20 +56,25 @@ export default async function DoctorVisitPage({ params }: PageProps<"/visits/[id
       )}
 
       {/* 1–3: the handoff, above everything else */}
-      <Card data-testid="handoff" className="border-primary/40">
-        <CardContent className="grid gap-4 pt-6 sm:grid-cols-3">
+      <Card data-testid="handoff" className="border-l-4 border-l-primary">
+        <CardContent className="grid gap-5 sm:grid-cols-3">
           <div className="sm:col-span-3">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reason for visit</p>
-            <p className="text-lg">{v.reason}</p>
+            <FieldCaption>Reason for visit</FieldCaption>
+            <p className="text-lg font-medium">{v.reason}</p>
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nurse vitals{v.nurseName ? ` · ${v.nurseName}` : ""}</p>
-            <p>BP {v.bpSys ?? "—"}/{v.bpDia ?? "—"} mmHg</p>
-            <p>Weight {v.weightKg ?? "—"} kg</p>
-            <p>Temp {v.tempC ?? "—"} °C</p>
+            <FieldCaption>Nurse vitals{v.nurseName ? ` · ${v.nurseName}` : ""}</FieldCaption>
+            <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-sm tabular-nums">
+              <dt className="text-muted-foreground">BP</dt>
+              <dd>{v.bpSys ?? "—"}/{v.bpDia ?? "—"} mmHg</dd>
+              <dt className="text-muted-foreground">Weight</dt>
+              <dd>{v.weightKg ?? "—"} kg</dd>
+              <dt className="text-muted-foreground">Temp</dt>
+              <dd>{v.tempC ?? "—"} °C</dd>
+            </dl>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nurse note</p>
+            <FieldCaption>Nurse note</FieldCaption>
             <p className="whitespace-pre-wrap">{v.nurseNote || "No note."}</p>
           </div>
         </CardContent>

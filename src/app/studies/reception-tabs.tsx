@@ -3,6 +3,7 @@
 import { logCall, recordConsent } from "@/actions/studies";
 import { ActionMessage, useAction } from "@/components/use-action";
 import { Button } from "@/components/ui/button";
+import { TableCard } from "@/components/ui-kit";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CALL_LABEL, CONSENT_LABEL, formatDate, formatTime } from "@/lib/format";
@@ -53,13 +54,14 @@ export function ReceptionStudyTabs({ callList, consentList }: { callList: CallRo
       </TabsList>
 
       <TabsContent value="calls" className="pt-4">
+        <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Patient</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Call status</TableHead>
-              <TableHead>Last updated</TableHead>
+              <TableHead className="hidden sm:table-cell">Last updated</TableHead>
               <TableHead className="text-right">Log call</TableHead>
             </TableRow>
           </TableHeader>
@@ -76,7 +78,7 @@ export function ReceptionStudyTabs({ callList, consentList }: { callList: CallRo
                 <TableCell className="font-medium">{c.patientName}</TableCell>
                 <TableCell>{c.phone}</TableCell>
                 <TableCell>{CALL_LABEL[c.callStatus]}</TableCell>
-                <TableCell>
+                <TableCell className="hidden sm:table-cell">
                   {formatDate(c.updatedAt)} {formatTime(c.updatedAt)}
                 </TableCell>
                 <TableCell className="text-right">
@@ -86,9 +88,11 @@ export function ReceptionStudyTabs({ callList, consentList }: { callList: CallRo
             ))}
           </TableBody>
         </Table>
+        </TableCard>
       </TabsContent>
 
       <TabsContent value="consent" className="pt-4">
+        <TableCard>
         <Table>
           <TableHeader>
             <TableRow>
@@ -119,6 +123,7 @@ export function ReceptionStudyTabs({ callList, consentList }: { callList: CallRo
             ))}
           </TableBody>
         </Table>
+        </TableCard>
       </TabsContent>
     </Tabs>
   );

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Role } from "@/lib/roles";
+import { TableCard } from "@/components/ui-kit";
 
 type StaffRow = { id: string; name: string; email: string; role: Role | null; active: boolean };
 
@@ -140,11 +141,12 @@ export function StaffTable({ staff, currentUserId }: { staff: StaffRow[]; curren
         <AddStaffDialog onResult={setMessage} />
       </div>
 
+      <TableCard>
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
+            <TableHead className="hidden md:table-cell">Email</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -158,8 +160,9 @@ export function StaffTable({ staff, currentUserId }: { staff: StaffRow[]; curren
                 <TableCell className="font-medium">
                   {s.name}
                   {isMe && <span className="ml-2 text-xs text-muted-foreground">(you)</span>}
+                  <span className="block text-xs font-normal text-muted-foreground md:hidden">{s.email}</span>
                 </TableCell>
-                <TableCell>{s.email}</TableCell>
+                <TableCell className="hidden md:table-cell">{s.email}</TableCell>
                 <TableCell>
                   <RoleSelect
                     label={`Role for ${s.name}`}
@@ -194,6 +197,7 @@ export function StaffTable({ staff, currentUserId }: { staff: StaffRow[]; curren
           })}
         </TableBody>
       </Table>
+      </TableCard>
     </div>
   );
 }

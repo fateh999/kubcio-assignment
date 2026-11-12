@@ -6,6 +6,7 @@ import { checkIn, doctorTake, nurseTake, setUrgent } from "@/actions/visits";
 import { ActionMessage, useAction } from "@/components/use-action";
 import { Button, buttonVariants } from "@/components/ui/button";
 import type { Role } from "@/lib/roles";
+import { cn } from "@/lib/utils";
 import type { VisitStage } from "@/lib/visit-stages";
 
 type Props = { role: Role; visit: { id: string; stage: VisitStage; urgent: boolean; mine: boolean } };
@@ -14,7 +15,8 @@ type Props = { role: Role; visit: { id: string; stage: VisitStage; urgent: boole
 export function BoardRowActions({ role, visit }: Props) {
   const router = useRouter();
   const { run, pending, result } = useAction();
-  const link = buttonVariants({ variant: "outline", size: "sm" });
+  // cn() merges the base and variant classes the way <Button> does (base border-transparent vs outline border).
+  const link = cn(buttonVariants({ variant: "outline", size: "sm" }));
 
   const buttons: React.ReactNode[] = [];
   if (role === "receptionist") {
@@ -26,7 +28,7 @@ export function BoardRowActions({ role, visit }: Props) {
       );
     if (visit.stage !== "done")
       buttons.push(
-        <Button key="urgent" size="sm" variant="outline" disabled={pending} onClick={() => run(() => setUrgent(visit.id, !visit.urgent))}>
+        <Button key="urgent" size="sm" variant="ghost" disabled={pending} onClick={() => run(() => setUrgent(visit.id, !visit.urgent))}>
           {visit.urgent ? "Unmark urgent" : "Mark urgent"}
         </Button>,
       );
@@ -69,7 +71,7 @@ export function BoardRowActions({ role, visit }: Props) {
   if (buttons.length === 0 && !result) return null;
   return (
     <div className="flex flex-col items-end gap-1">
-      <div className="flex flex-wrap justify-end gap-2">{buttons}</div>
+      <div className="flex flex-nowrap items-center justify-end gap-1.5 whitespace-nowrap">{buttons}</div>
       {result && "error" in result && <ActionMessage result={result} />}
     </div>
   );
