@@ -65,7 +65,7 @@ It builds the app and serves it on its own port (**3100**), so it doesn't clash 
 | File | PRD success criteria covered |
 | --- | --- |
 | `e2e/auth.spec.ts` | Signed-out redirect (real 307); an unknown email gets the same message and its link is refused; each role lands on its view; a used link is refused; nurse refused `/admin`, reception refused the doctor page and results; admin adds staff (invite email), changes role, deactivates (open session ends, new link refused) and reactivates; admin can't deactivate themselves |
-| `e2e/visit-flow.spec.ts` | Board shows stage, who's handling, minutes waiting, urgent first; **one patient through every role** with the handoff shown first to the doctor; checkout blocked while a task is open, including from a **stale page** (server refuses); the board **updates on its own** when someone else acts |
+| `e2e/visit-flow.spec.ts` | Board shows stage, who's handling, minutes waiting, urgent first; **one patient through every role** with the handoff shown first to the doctor; checkout blocked while a task is open, including from a **stale page** (server refuses); the board **updates on its own** when someone else acts; **walk-in** added by reception joins the nurse's queue in the right order |
 | `e2e/results.spec.ts` | Unreviewed results oldest first; marking one removes it and the count drops; nurses can't mark |
 | `e2e/study.spec.ts` | Possible match / needs check with evidence, no eligibility wording; approve → *Needs call*, **consent Unknown**; reached → still Unknown; reception records consent (with who); re-run keeps review/call/consent; dismissed patients never reach the call list |
 | `e2e/access.spec.ts` | Reception's raw server responses (board, checkout, study) contain no diagnoses, medications, allergies, results or notes; the admin's board is read-only |
@@ -90,7 +90,9 @@ Seeded data is relative to today, so the board always has patients. To see every
 3. **Reception** → *Consent* tab: click **Consented**. It records who did it.
 4. **Doctor**: **Re-run matching** updates the match evidence but keeps Margaret's review, call and consent.
 
-**4. Admin** (`admin@clinic.test`)
+**4. Walk-in** (reception): **Add walk-in** on the board. Enter name, reason, sex and phone (date of birth and email are optional) and tick Urgent if needed. They're checked in straight away, sorted with the other urgent patients by arrival, and the nurse can take them like anyone else.
+
+**5. Admin** (`admin@clinic.test`)
 - Add a staff member: they get a magic link in Mailpit.
 - Change a role, or deactivate someone: they're signed out at once and can't sign back in.
 - You can't deactivate yourself or change your own role.
@@ -134,7 +136,8 @@ Where the PRD left a decision open we made one so the prototype works. Each row 
 - **Times use the server's local time zone.** "Today" means the server's calendar day.
 - **Magic links expire after 5 minutes** (Better Auth's default) and work once.
 - **Sign-in is rate-limited in production builds**: 5 magic-link requests or clicks per minute per IP (Better Auth's default; off in `bun dev`). Over the limit, the sign-in page says so.
-- Out of scope, as in the PRD: booking or editing appointments, password reset, 2FA, prescriptions, billing, notifications, editing diagnoses/medications/allergies, more than one study, deployment.
+- **A walk-in always creates a new patient record.** There's no search for an existing patient, so a known patient arriving without an appointment gets a duplicate record.
+- Out of scope, as in the PRD: booking or editing appointments (walk-ins are the exception: added as already checked in), password reset, 2FA, prescriptions, billing, notifications, editing diagnoses/medications/allergies, more than one study, deployment.
 
 ## How it's built
 

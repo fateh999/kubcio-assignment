@@ -20,6 +20,7 @@ const SPEC_ROLES: Record<string, string[]> = {
   checkIn: ["receptionist"],
   setUrgent: ["receptionist"],
   updateContact: ["receptionist"],
+  addWalkIn: ["receptionist"],
   nurseTake: ["nurse"],
   saveVitals: ["nurse"],
   sendToDoctor: ["nurse"],

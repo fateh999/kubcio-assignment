@@ -2,6 +2,7 @@
 import { and, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { checkoutTasks, patients, visits } from "@/db/schema";
+import { localISODate } from "@/lib/dates";
 import { transitionVisit } from "@/lib/transition-visit";
 import {
   type ActionResult,
@@ -86,6 +87,47 @@ export async function setUrgent(db: Db, actor: Actor, visitId: unknown, urgent: 
     .returning({ id: visits.id });
   if (updated.length === 0) return fail("This visit is already done");
   return ok(flag.data ? "Marked urgent" : "No longer urgent");
+}
+
+/** A patient who arrives without an appointment: new patient record + a visit already checked in. */
+export const walkInSchema = z.object({
+  name: z.string().trim().min(2, "Enter the patient's name").max(100, "Name is too long"),
+  dob: z
+    .string()
+    .trim()
+    .transform((v) => (v === "" ? null : v))
+    .nullable()
+    .optional()
+    .refine((v) => v == null || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))), "Date of birth must be a valid date")
+    .refine((v) => v == null || v <= localISODate(), "Date of birth can't be in the future"),
+  sex: z.enum(["F", "M", "X"], { error: "Choose sex" }),
+  phone: z.string().trim().min(3, "Enter a phone number").max(40, "Phone number is too long"),
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .max(200)
+    .refine((v) => v === "" || z.email().safeParse(v).success, "Enter a valid email or leave it blank"),
+  reason: z.string().trim().min(2, "Enter the reason for the visit").max(300, "Reason is too long"),
+  urgent: z.boolean().default(false),
+});
+export type WalkInInput = z.input<typeof walkInSchema>;
+
+export async function addWalkIn(db: Db, actor: Actor, input: unknown): Promise<ActionResult> {
+  if (!isAllowed(actor, "addWalkIn")) return fail(NOT_ALLOWED);
+  const parsed = parse(walkInSchema, input);
+  if ("error" in parsed) return fail(parsed.error);
+  const w = parsed.data;
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    const [patient] = await tx
+      .insert(patients)
+      .values({ name: w.name, dob: w.dob ?? null, sex: w.sex, phone: w.phone, email: w.email })
+      .returning({ id: patients.id });
+    // Arrives now: appointment and arrival are both "now"; goes straight into the nurse's queue.
+    await tx.insert(visits).values({ patientId: patient.id, reason: w.reason, appointmentAt: now, arrivedAt: now, stage: "checked_in", urgent: w.urgent });
+  });
+  return ok(`${w.name} added and checked in`);
 }
 
 export async function updateContact(db: Db, actor: Actor, patientId: unknown, input: unknown): Promise<ActionResult> {
