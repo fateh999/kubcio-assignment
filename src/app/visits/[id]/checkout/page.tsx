@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { PageHeader, StageBadge } from "@/components/ui-kit";
 import { requireUser } from "@/lib/require-user";
-import { STAGE_LABEL } from "@/lib/visit-stages";
 import { getCheckoutVisit } from "@/server/queries";
 import { CheckoutPanel } from "./checkout-panel";
 
@@ -19,13 +18,17 @@ export default async function CheckoutPage({ params }: PageProps<"/visits/[id]/c
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-8">
-      <Link href="/board" className="text-sm underline underline-offset-4">
+      <Link href="/board" className="text-sm text-muted-foreground hover:text-foreground">
         ← Visit board
       </Link>
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-semibold">Checkout · {v.patientName}</h1>
-        <Badge variant="secondary">{STAGE_LABEL[v.stage]}</Badge>
-      </div>
+      <PageHeader
+        title={
+          <>
+            {v.patientName} <StageBadge stage={v.stage} />
+          </>
+        }
+        description="Checkout: confirm contact details and finish what's left before the patient leaves."
+      />
       <CheckoutPanel
         role={me.role}
         visit={{ id: v.id, stage: v.stage, patientId: v.patientId, phone: v.phone, email: v.email }}

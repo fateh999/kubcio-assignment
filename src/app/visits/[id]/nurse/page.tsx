@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
+import { FieldCaption, PageHeader, StageBadge, UrgentBadge } from "@/components/ui-kit";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { localISODate } from "@/lib/dates";
 import { ageOn } from "@/lib/matcher";
 import { requireUser } from "@/lib/require-user";
-import { STAGE_LABEL } from "@/lib/visit-stages";
 import { getNurseVisit } from "@/server/queries";
 import { VitalsForm } from "./vitals-form";
 
@@ -23,23 +22,23 @@ export default async function NurseVisitPage({ params }: PageProps<"/visits/[id]
   const age = v.dob ? `Age ${ageOn(v.dob, localISODate())}` : "Age unknown";
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-      <Link href="/board" className="text-sm underline underline-offset-4">
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-4 py-8">
+      <Link href="/board" className="text-sm text-muted-foreground hover:text-foreground">
         ← Visit board
       </Link>
+      <PageHeader
+        title={
+          <>
+            {v.patientName} {v.urgent && <UrgentBadge />} <StageBadge stage={v.stage} />
+          </>
+        }
+        description={age}
+      />
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex flex-wrap items-center gap-2 text-xl">
-            {v.patientName}
-            <span className="text-sm font-normal text-muted-foreground">{age}</span>
-            {v.urgent && <Badge variant="destructive">Urgent</Badge>}
-            <Badge variant="secondary">{STAGE_LABEL[v.stage]}</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Reason for visit</p>
-          <p className="text-lg" data-testid="reason">
+        <CardContent className="flex flex-col gap-1">
+          <FieldCaption>Reason for visit</FieldCaption>
+          <p className="text-lg font-medium" data-testid="reason">
             {v.reason}
           </p>
         </CardContent>

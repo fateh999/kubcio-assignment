@@ -16,6 +16,8 @@ export function shortName(name: string | null | undefined): string {
 const timeFmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
 const dateFmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
+const timeSecFmt = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+export const formatTimeWithSeconds = (d: Date) => timeSecFmt.format(d);
 export const formatTime = (d: Date | null | undefined) => (d ? timeFmt.format(d) : "—");
 export const formatDate = (d: Date | string | null | undefined) => (d ? dateFmt.format(typeof d === "string" ? new Date(`${d}T00:00:00`) : d) : "—");
 

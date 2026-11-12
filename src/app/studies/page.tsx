@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui-kit";
 import { requireUser } from "@/lib/require-user";
 import { getCallList, getConsentList, getStudyReviewList } from "@/server/queries";
 import { ReceptionStudyTabs } from "./reception-tabs";
@@ -13,14 +14,13 @@ export default async function StudiesPage() {
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-8">
-      <h1 className="mb-1 text-2xl font-semibold">Diabetes study</h1>
-      <p className="mb-6 text-sm text-muted-foreground">Criteria from the clinic: adult and a documented diagnosis of diabetes.</p>
+      <PageHeader title="Diabetes study" description="Criteria from the clinic: adult and a documented diagnosis of diabetes." />
       {me.role === "doctor" ? (
         <ReviewList rows={await getStudyReviewList()} />
       ) : (
         <ReceptionStudyTabs callList={await getCallList()} consentList={await getConsentList()} />
       )}
-      <p className="mt-8 border-t pt-4 text-sm text-muted-foreground">
+      <p className="mt-6 rounded-lg border border-dashed bg-card px-4 py-3 text-sm text-muted-foreground">
         A possible match only means the record suggests this patient may suit the study. It is not a decision and not consent.
       </p>
     </main>
