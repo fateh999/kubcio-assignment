@@ -153,6 +153,7 @@ export const auth = betterAuth({
 ```
 
 - No email/password, no social providers, no cookie cache (so a ban takes effect on the next request).
+- **Rate limiting:** Better Auth's default, on in production builds only. Magic link: 5 requests or verifications per minute per IP. The sign-in form shows "Too many sign-in attempts from this network…" on HTTP 429; that applies to every email, so it reveals nothing about who is on staff. `AUTH_RATE_LIMIT=off` disables it and is set **only** by the e2e test server.
 - A `hooks.before` on `/magic-link/verify` looks up whose link it is and redirects a deactivated user to `/sign-in?error=deactivated`. Without it, the admin plugin's `BANNED_USER` error reaches the browser as raw JSON (HTTP 403). The user never gets a session either way.
 - `src/proxy.ts` (Next 16's name for middleware) sends any request without a session cookie a real HTTP 307 to `/sign-in`. It's an optimistic check only: `requireUser` remains the guard for session, role and deactivation. It's needed because `cacheComponents` partially prerenders pages, so a signed-out visitor would otherwise get a 200 with the redirect streamed inside it.
 - `src/app/api/auth/[...all]/route.ts`: `export const { GET, POST } = toNextJsHandler(auth);`
@@ -521,6 +522,14 @@ Hand-written fixtures, never the database. Fixed `today = "2026-11-12"`.
 | 8 | No eligibility language | for every fixture, `JSON.stringify(result)` does not match `/eligib/i`, and `status` ∈ the three allowed values |
 | 9 | Code-only diagnosis | condition `{ name: "DM", code: "E11.65" }` counts as documented |
 | 10 | HbA1c alone | adult with only an HbA1c result → `needs_check`, evidence says "context only" |
+
+### 12.1 End-to-end tests (`bun run test:e2e`)
+
+Playwright, in `e2e/`, one file per area: auth, visit flow, results, study, access. Each test maps to a PRD success criterion.
+- **Server:** builds the app and serves it on port 3100 with `BETTER_AUTH_URL` pointing there and `AUTH_RATE_LIMIT=off`.
+- **Data:** each file re-seeds first.
+- **Sign-in:** through the real form, reading the magic link from Mailpit's API.
+- **Proof it catches regressions:** if approval also sets consent, the study test fails.
 
 ## 13. README (written in slice 1:45–1:52)
 
