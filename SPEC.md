@@ -253,6 +253,14 @@ Implemented as `src/lib/visit-stages.ts` (pure: stage order, labels, `isAllowedT
 
 Every action: (1) `requireUser(roles)`, (2) zod-parse input, (3) check preconditions, (4) write, (5) `revalidatePath` for the affected pages. Errors come back as `{ error: string }` and appear in the form; they never throw raw database errors to the UI.
 
+**How they're built.** Each action is split in two:
+- **Logic** in `src/server/{visits,results,checkout,studies}.ts`: `(db, actor, input)`. It re-checks the role, parses input and does the conditional writes. It's tested directly against Postgres (`tests-db/actions.test.ts`).
+- **A thin `"use server"` wrapper** in `src/actions/*.ts`: `requireUser(ACTION_ROLES[name])`, then the logic, then revalidate.
+
+The roles live in one table, `ACTION_ROLES` (`src/server/common.ts`). `tests-db/action-guards.test.ts` checks every wrapper asks for exactly the roles in the tables below, before anything else runs.
+
+**Concurrency.** Stage changes go through `transitionVisit()` (§7). `addCheckoutTask`, `toggleTask` and `completeVisit` lock the visit row (`SELECT … FOR UPDATE`) first, so a task can't be added after send-to-checkout and an untick can't land as the visit completes. Otherwise a done visit could be left with an open task; a 30-round race test covers this.
+
 ### 8.1 Visits (`actions/visits.ts`)
 
 | Action | Roles | Precondition | Effect |
@@ -292,8 +300,8 @@ The UI disables "Complete visit" while any task is open, and the server re-check
 | Action | Roles | Precondition | Effect (only these fields change) |
 | --- | --- | --- | --- |
 | `rerunMatching()` | doctor | — | per patient: upsert `matchStatus`, `evidenceJson`, `missingJson`, `updatedAt`. **Never** touches `reviewStatus`, `reviewedBy`, `callStatus`, `consentStatus`, `consentBy`, `notes` |
-| `approveCandidate(id, note?)` | doctor | `reviewStatus = pending` | `reviewStatus = approved`, `reviewedBy = me`, `notes = note`, `callStatus = needs_call` **only if** it was `not_started` |
-| `dismissCandidate(id, note?)` | doctor | `reviewStatus = pending` | `reviewStatus = dismissed`, `reviewedBy = me`, `notes = note` |
+| `approveCandidate(id, note?)` | doctor | `reviewStatus = pending` AND `matchStatus ≠ no_match` (only listed candidates) | `reviewStatus = approved`, `reviewedBy = me`, `notes = note`, `callStatus = needs_call` **only if** it was `not_started` |
+| `dismissCandidate(id, note?)` | doctor | `reviewStatus = pending` AND `matchStatus ≠ no_match` | `reviewStatus = dismissed`, `reviewedBy = me`, `notes = note` |
 | `logCall(id, outcome: "reached" \| "no_answer")` | receptionist | `reviewStatus = approved` AND `callStatus ∈ {needs_call, no_answer}` | `callStatus = outcome` |
 | `recordConsent(id, value: "consented" \| "declined")` | receptionist | `callStatus = reached` AND `consentStatus = unknown` | `consentStatus = value`, `consentBy = me` |
 

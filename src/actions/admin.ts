@@ -15,7 +15,7 @@ export type ActionResult = { ok: string } | { error: string };
 const roleSchema = z.enum(ROLES);
 const addStaffSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
-  email: z.email("Enter a valid email").trim().toLowerCase(),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email")),
   role: roleSchema,
 });
 
