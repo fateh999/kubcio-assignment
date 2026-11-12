@@ -104,7 +104,7 @@ Where the PRD left a decision open we made one so the prototype works. Each row 
 ## Known limits
 
 - **Access rules are enforced in the app, not by the database.** Postgres is reachable only from the server, so app-level checks are enough for a local prototype. A production version would add Postgres row-level security as a second layer.
-- **The board doesn't update live.** It's correct whenever you load or act on it; use **Refresh** to see other staff's changes.
+- **The board updates by polling, not push.** It refreshes every 10 seconds while the tab is open (paused when the tab is hidden), so other staff's changes can take up to 10 s to appear; **Refresh now** forces it. Websockets/SSE are out of scope.
 - **Times use the server's local time zone.** "Today" means the server's calendar day.
 - **Magic links expire after 5 minutes** (Better Auth's default) and work once.
 - Out of scope, as in the PRD: booking or editing appointments, password reset, 2FA, prescriptions, billing, notifications, editing diagnoses/medications/allergies, more than one study, deployment.
