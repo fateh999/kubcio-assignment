@@ -247,6 +247,8 @@ scheduled ──check in──▶ checked_in ──nurse takes──▶ with_nur
 
 Every transition is a single conditional update, `UPDATE visits SET … WHERE id = $1 AND stage = $expected`. If zero rows change, the action returns "This patient has already moved on" and the page refreshes. That makes double clicks and two staff taking the same patient safe. No transition skips a stage or goes backwards.
 
+Implemented as `src/lib/visit-stages.ts` (pure: stage order, labels, `isAllowedTransition`) and `transitionVisit()` in `src/lib/transition-visit.ts`, which every §8 stage-changing action uses. It takes optional extra fields to write in the same statement (e.g. `nurseId`, `arrivedAt`) and extra conditions (e.g. `nurseId = me`). A non-forward `from → to` throws. Covered by `tests/visit-stages.test.ts` and `tests-db/transition-visit.test.ts` (`bun run test:db`), including 10 rounds of 5 concurrent attempts where exactly one must win.
+
 ## 8. Server actions
 
 Every action: (1) `requireUser(roles)`, (2) zod-parse input, (3) check preconditions, (4) write, (5) `revalidatePath` for the affected pages. Errors come back as `{ error: string }` and appear in the form; they never throw raw database errors to the UI.

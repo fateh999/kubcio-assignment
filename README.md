@@ -31,4 +31,5 @@ bun dev                       # http://localhost:3000
 | `bun run auth:generate` | Regenerate `src/db/auth-schema.ts` from the Better Auth config (output is committed) |
 | `bun run typecheck` | Generate route types and run `tsc` |
 | `bun run lint` | ESLint |
-| `bun test` | Matcher unit tests |
+| `bun test` | Unit tests (matcher, visit stages); no database needed |
+| `bun run test:db` | Database tests against local Postgres (visit transitions, incl. concurrent staff) |
