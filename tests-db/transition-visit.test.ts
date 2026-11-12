@@ -99,8 +99,3 @@ describe("transitionVisit (SPEC §7)", () => {
     expect(row.arrivedAt?.getTime()).toBe(arrivedAt.getTime());
   });
 });
-
-afterAll(() => {
-  // postgres-js keeps the pool open; end it so bun test exits.
-  setTimeout(() => process.exit(0), 50);
-});
