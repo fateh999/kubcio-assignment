@@ -88,6 +88,8 @@ Nothing can be deleted.
 
 ## Assumptions (to confirm with the clinic)
 
+Where the PRD left a decision open we made one so the prototype works. Each row is still worth asking the clinic. The two marked **Decided** are where the PRD contradicted itself; we settled them for the build.
+
 | Assumption | Why | Ask the clinic |
 | --- | --- | --- |
 | The doctor reviews possible study matches | Owner said "staff"; a clinical judgment is safest with the doctor | Who should review matches? |
@@ -96,8 +98,8 @@ Nothing can be deleted.
 | No lab thresholds, recency rules or medication exclusions | None were confirmed for the study | The study's full criteria |
 | Access is a simple per-role scheme, managed by an admin | Owner asked us not to treat permissions as confirmed | Who may see clinical details? |
 | No staff or patient-volume assumptions | Owner gave no reliable counts | — |
-| Only the doctor adds checkout tasks; reception ticks them off | The PRD's access table says so; its assumptions list says reception can add more (SPEC §16) | What usually happens at checkout? Should reception add tasks? |
-| Reception's study tabs show no evidence | Evidence lists diagnoses, which reception may not read | Is that the right split? |
+| **Decided:** only the doctor adds checkout tasks; reception ticks them off | The PRD contradicts itself: its access table says doctor only, its assumptions say reception can add more. We follow the enforced access table (SPEC §16 #1) | What usually happens at checkout? Should reception add tasks? |
+| **Decided:** reception's study tabs show no evidence, not even the match label | Evidence lists diagnoses, which reception may not read (SPEC §16 #2) | Is that the right split? |
 
 ## Known limits
 
