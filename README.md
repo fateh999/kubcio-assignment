@@ -46,7 +46,7 @@ Also added on request: **walk-ins** (reception adds a patient without an appoint
 
 ## Decisions and limits
 
-- **PRD contradictions:** only the doctor adds checkout tasks; reception never sees study evidence (it contains diagnoses).
+- **Decisions:** only the doctor adds checkout tasks; reception sees the study call list but no evidence (it contains diagnoses).
 - **To confirm with the clinic:** the doctor reviews study matches; urgent first, then by arrival; any doctor can take any patient.
 - **Limits:** access is enforced in the app, not the database; the board polls every 10 s; a walk-in always creates a new patient record.
 

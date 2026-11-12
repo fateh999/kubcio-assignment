@@ -1,6 +1,6 @@
 # Clinic Management Prototype — Build Spec
 
-Derived from *Clinic Management Prototype — PRD* (Nov 12, 2026). This is the first slice of the build plan (0:00–0:10): the PRD turned into something we can build from. Where this spec and the PRD disagree, the PRD wins. Points where the PRD contradicts itself are listed in [§16](#16-prd-discrepancies-resolved-here).
+Derived from *Clinic Management Prototype — PRD* (Nov 12, 2026). This is the first slice of the build plan (0:00–0:10): the PRD turned into something we can build from. Where this spec and the PRD disagree, the PRD wins. Clarifications made to the PRD while building are listed in [§16](#16-prd-clarifications).
 
 **Three rules apply everywhere in this spec and the code built from it:**
 
@@ -600,16 +600,16 @@ Each slice is checked before the next starts. Any slice still unfinished 10 minu
 | No staff or patient-volume assumptions | Owner gave no reliable counts | — |
 | Checkout tasks come from the doctor; reception ticks them off (decided, §16 #1) | Owner said reception sees what's left before the patient leaves | What usually happens at checkout? |
 
-## 16. PRD discrepancies resolved here
+## 16. PRD clarifications
 
-All four were reviewed and **decided on Nov 12, 2026**. #1 and #2 stay as open questions for the clinic (README, Assumptions) but are not open for the build.
+While building, four points in the PRD needed a decision. The first three were **written back into the PRD on Nov 12, 2026**, so the PRD and the app agree. The fourth is an implementation detail.
 
-| # | PRD conflict | Decision |
+| # | Point | Decision (and where it now lives) |
 | --- | --- | --- |
-| 1 | The assumptions table says "reception can add more" checkout tasks; the enforced access table says only the doctor adds tasks (reception ticks off) | **Decided: doctor only.** Follow the enforced access table. Reception ticks tasks off but can't add them. If the clinic later wants reception to add tasks, that's a one-line role change in `addCheckoutTask` (`ACTION_ROLES`) plus an input on the checkout page |
-| 2 | Reception reads study candidates, but evidence lists diagnoses, which reception can't read | **Decided: reception sees no evidence**, not even the match label. Reception's Call list and Consent tabs show patient, phone, call status and consent only; evidence and missing items are doctor-only. Reception's queries don't select those columns (`getCallList`, `getConsentList`) |
-| 3 | "Consent updates record the signed-in user", but `studyCandidates` has no field for it | **Decided: added `consentBy`** (→ user.id), set only by `recordConsent` |
-| 4 | `auth.api.createUser` sends no email, but the PRD says adding staff "sends a magic-link invite" | **Decided: `addStaff` calls `signInMagicLink`** for the new email right after `createUser` (§5.5), so the invite is a normal magic link |
+| 1 | Who adds checkout tasks | **The doctor adds them; reception ticks them off.** PRD access table and assumptions row. If the clinic wants reception to add tasks too, it's a one-line role change in `addCheckoutTask` (`ACTION_ROLES`) plus an input on the checkout page |
+| 2 | What reception sees of study candidates | **The call list and consent only:** patient, phone, call status and consent. No match evidence or missing items, because evidence lists diagnoses. PRD access table. Reception's queries don't select those columns (`getCallList`, `getConsentList`) |
+| 3 | Recording who set consent | **`consentBy`** (→ user.id), set only by `recordConsent`. PRD data model |
+| 4 | The add-staff invite | `auth.api.createUser` sends no email, so `addStaff` calls `signInMagicLink` for the new address right after (§5.5). The invite is a normal magic link |
 
 ## 17. Out of scope
 
