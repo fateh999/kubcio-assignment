@@ -362,12 +362,23 @@ export function matchPatient(patient: MatcherPatient, today: string /* "YYYY-MM-
 
 Uses shadcn components throughout. Times are shown in local time, `HH:mm`.
 
+**Look and layout (applies to every screen):**
+- **Shared pieces** in `src/components/ui-kit.tsx`:
+  - `PageHeader`: title, description, actions
+  - `TableCard`: a table in a bordered card with a muted header row
+  - `StageBadge`: one colour per stage. Scheduled slate, checked in sky, with nurse violet, ready for doctor amber, with doctor indigo, ready for checkout emerald, done outlined
+  - `UrgentBadge`
+- **Chrome:** a sticky header highlights the current page in the nav; the page background is light grey so cards stand out. Font: Geist.
+- **Window sizes:** pages fit the window without scrolling sideways (checked at 1280, 1024 and 768 px). Below `md` (768 px), the board and the study review switch from a table to one card per row with the same information and buttons. Other tables move secondary columns under the main cell on narrow windows. The nav and board tabs scroll sideways instead of wrapping.
+
 Read queries live in `src/server/queries.ts`, one per screen. Each selects only what its screen may show, so reception's board, checkout and study tabs never load diagnoses, medications, allergies, results, notes or study evidence. Buttons call the §8 actions; on an error (e.g. someone else moved the patient) the page shows the message and refreshes.
 
 ### 10.1 Visit board — `/board` (FR1)
 
 - **Scope:** visits whose `appointmentAt` falls on today (local date).
-- **Columns:** patient name, reason, preferred doctor, appointment time, arrival time, minutes waiting, stage Badge, handled by, urgent Badge.
+- **Columns:** patient name (with the urgent badge, and the preferred doctor underneath as "Prefers Dr …"), reason, appointment · arrival time ("not arrived" until check-in), minutes waiting, stage badge, handled by, actions.
+  - *Long waits:* 30 minutes or more is shown in amber. This is a visual cue only and doesn't change the order.
+  - *Urgent rows* are tinted red until the visit is done.
   - *Minutes waiting* = `now − arrivedAt` in whole minutes, for stages `checked_in` through `ready_for_checkout`; blank for `scheduled` and `done`. Rendered on the server.
   - **Updates by polling** (decided Nov 12): the board re-renders every 10 s with `router.refresh()`, which keeps client state such as an error message under a button. It pauses while the tab is hidden and refreshes at once when the tab is shown again. An "Updated HH:MM:SS" label shows when the data was fetched, and "Refresh now" forces it. Push updates (websockets/SSE) are out of scope.
   - *Handled by:* "With nurse · Priya" (nurse's name while `with_nurse`), "With doctor · Dr Khan" (while `with_doctor`). In later stages it shows who last handled the patient (e.g. "Seen by Dr Khan").
@@ -430,7 +441,11 @@ Tabs depend on role.
 **Doctor: "Review" tab**
 
 - "Re-run matching" button (shows "Matched N patients" afterwards).
-- Rows: every candidate with `matchStatus ∈ {possible_match, needs_check}`. Columns: patient, match status Badge ("Possible match" / "Needs check"), evidence (list), missing (list, shown in an amber colour), review status, call status, consent status, note.
+- Rows: every candidate with `matchStatus ∈ {possible_match, needs_check}`. Columns:
+  - **Patient**, with the match badge ("Possible match" / "Needs check") underneath
+  - **Evidence in the record**: the evidence list, then "Missing: …" in amber
+  - **Status**: review, call and consent as a small labelled list, plus the doctor's note
+  - **Actions**
 - For `pending` rows: "Approve for contact" and "Dismiss" open a Dialog with an optional note.
 - Page footer text: "A possible match only means the record suggests this patient may suit the study. It is not a decision and not consent."
 
