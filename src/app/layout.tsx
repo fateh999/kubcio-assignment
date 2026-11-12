@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AppHeader } from "@/components/app-header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,7 +25,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {/* The header reads the session, so it streams in behind its own boundary. */}
+        <Suspense fallback={<div className="h-14 border-b" />}>
+          <AppHeader />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }

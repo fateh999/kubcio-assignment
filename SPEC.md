@@ -32,7 +32,9 @@ docker-compose.yml
 drizzle.config.ts
 README.md
 src/
+  proxy.ts                         # optimistic signed-out redirect (§5.1)
   app/
+    forbidden/page.tsx             # "no access" page (§5.4)
     api/auth/[...all]/route.ts     # Better Auth handler (toNextJsHandler)
     sign-in/page.tsx               # email form → magic link
     page.tsx                       # "/" → redirect to role's default view
@@ -48,7 +50,7 @@ src/
   lib/
     auth.ts                        # betterAuth() server config
     auth-client.ts                 # createAuthClient() with magicLinkClient + adminClient
-    require-user.ts                # requireUser(roles)
+    require-user.ts                # requireUser(roles), getCurrentUser()
     roles.ts                       # Role type, DEFAULT_VIEW map
     mailer.ts                      # nodemailer transport (Mailpit)
     matcher.ts                     # matchPatient() — pure, no DB imports
@@ -151,6 +153,8 @@ export const auth = betterAuth({
 ```
 
 - No email/password, no social providers, no cookie cache (so a ban takes effect on the next request).
+- A `hooks.before` on `/magic-link/verify` looks up whose link it is and redirects a deactivated user to `/sign-in?error=deactivated`. Without it, the admin plugin's `BANNED_USER` error reaches the browser as raw JSON (HTTP 403). The user never gets a session either way.
+- `src/proxy.ts` (Next 16's name for middleware) sends any request without a session cookie a real HTTP 307 to `/sign-in`. It's an optimistic check only: `requireUser` remains the guard for session, role and deactivation. It's needed because `cacheComponents` partially prerenders pages, so a signed-out visitor would otherwise get a 200 with the redirect streamed inside it.
 - `src/app/api/auth/[...all]/route.ts`: `export const { GET, POST } = toNextJsHandler(auth);`
 - Client (`auth-client.ts`): `createAuthClient({ plugins: [magicLinkClient(), adminClient()] })`.
 
@@ -187,6 +191,7 @@ export async function requireUser(roles?: Role[]) {
 ```
 
 - Called at the top of **every** page and **every** server action, with the roles from §6.
+- `getCurrentUser()` calls `await connection()` before reading the session, so the session's expiry check always runs at request time, never in a prerender or prefetch (`cacheComponents` is on). Session-gated pages set `export const instant = false`.
 - `/forbidden` is a static page: "You don't have access to this page." plus a link to your default view.
 - A user whose `role` is missing or not one of the four is treated as not allowed anywhere except `/forbidden`.
 
