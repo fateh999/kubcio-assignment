@@ -63,7 +63,7 @@ Staff sign in with a magic link handled by Better Auth, an open-source library t
 | Results | Nurse, doctor | Doctor (mark reviewed) |
 | Visits | All staff | Reception, nurse, doctor (each only their own stage changes and fields) |
 | Checkout tasks | All staff | Doctor (add); reception, doctor (tick off) |
-| Study candidates | Doctor, reception | Doctor (review, re-run matching); reception (call, consent) |
+| Study candidates | Doctor (with match evidence); reception (call list and consent only: name, phone, call and consent status, no evidence, since it lists diagnoses) | Doctor (review, re-run matching); reception (call, consent) |
 
 Nothing can be deleted. Postgres is reachable only from the server (there is no public API), so app-level checks are enough for a local prototype. The known limit: the database itself doesn't enforce these rules. A production version would add Postgres row-level security as a second layer.
 
@@ -151,7 +151,7 @@ Every visit moves through six stages, and each screen below matches one handoff 
 
 ## Data model
 
-The model uses nine tables (the patient record, the visit, which carries the handoff, and the study tracking), plus Better Auth's own tables (see Authentication and admin). Every "who" field (nurseId, doctorId, reviewedBy) references user.id.
+The model uses nine tables (the patient record, the visit, which carries the handoff, and the study tracking), plus Better Auth's own tables (see Authentication and admin). Every "who" field (nurseId, doctorId, reviewedBy, consentBy) references user.id.
 
 | Table | Key fields | Notes |
 | --- | --- | --- |
@@ -163,7 +163,7 @@ The model uses nine tables (the patient record, the visit, which carries the han
 | visits | patientId, reason, appointmentAt, arrivedAt, stage, urgent, preferredDoctor, nurseId, doctorId, bpSys, bpDia, weightKg, tempC, nurseNote, doctorNote | stage is an enum of the six stages + *scheduled* |
 | checkoutTasks | visitId, label, done | Blocks checkout while any are open |
 | studies | id, name, description | One seeded: Diabetes study |
-| studyCandidates | studyId, patientId, matchStatus, evidenceJson, missingJson, reviewStatus, reviewedBy, callStatus, consentStatus, notes, updatedAt | Status fields are independent |
+| studyCandidates | studyId, patientId, matchStatus, evidenceJson, missingJson, reviewStatus, reviewedBy, callStatus, consentStatus, consentBy, notes, updatedAt | Status fields are independent; consentBy records who recorded consent |
 
 **Enums**
 
@@ -215,7 +215,7 @@ These are our working assumptions where the owner left a decision open; each one
 | No lab thresholds, recency rules or medication exclusions | None were confirmed for the study | The study's full criteria |
 | Access is a simple per-role scheme, managed by an admin | Owner asked us not to treat permissions as confirmed | Who may see clinical details? |
 | No staff or patient-volume assumptions | Owner gave no reliable counts | — |
-| Checkout tasks come from the doctor; reception can add more | Owner said reception sees what's left before the patient leaves | What usually happens at checkout? |
+| Checkout tasks come from the doctor; reception ticks them off | Owner said reception sees what's left before the patient leaves | What usually happens at checkout? Should reception add tasks too? |
 
 ## Verification and build plan
 
