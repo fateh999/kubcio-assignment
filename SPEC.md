@@ -368,7 +368,8 @@ Read queries live in `src/server/queries.ts`, one per screen. Each selects only 
 
 - **Scope:** visits whose `appointmentAt` falls on today (local date).
 - **Columns:** patient name, reason, preferred doctor, appointment time, arrival time, minutes waiting, stage Badge, handled by, urgent Badge.
-  - *Minutes waiting* = `now − arrivedAt` in whole minutes, for stages `checked_in` through `ready_for_checkout`; blank for `scheduled` and `done`. Rendered on the server with a "Refresh" button. Live updating is out of scope.
+  - *Minutes waiting* = `now − arrivedAt` in whole minutes, for stages `checked_in` through `ready_for_checkout`; blank for `scheduled` and `done`. Rendered on the server.
+  - **Updates by polling** (decided Nov 12): the board re-renders every 10 s with `router.refresh()`, which keeps client state such as an error message under a button. It pauses while the tab is hidden and refreshes at once when the tab is shown again. An "Updated HH:MM:SS" label shows when the data was fetched, and "Refresh now" forces it. Push updates (websockets/SSE) are out of scope.
   - *Handled by:* "With nurse · Priya" (nurse's name while `with_nurse`), "With doctor · Dr Khan" (while `with_doctor`). In later stages it shows who last handled the patient (e.g. "Seen by Dr Khan").
 - **Sort:** `urgent DESC, arrivedAt ASC NULLS LAST, appointmentAt ASC`. Appointment time is a tiebreak for not-yet-arrived rows and is shown for reference; it never moves an arrived patient.
 - **Filter:** Tabs `All · Scheduled · Checked in · With nurse · Ready for doctor · With doctor · Ready for checkout · Done`. They're links (`/board?tab=…`) rather than the client-side Tabs component, so the filter survives a refresh and the board stays a server-rendered page. Default tab by `view`:
@@ -577,4 +578,4 @@ Each slice is checked before the next starts. Any slice still unfinished 10 minu
 
 ## 17. Out of scope
 
-Booking or editing appointments (seeded) · passwords, password reset, OAuth, two-factor authentication · fine-grained permissions · prescriptions, billing, messaging, notifications · editing diagnoses, medications or allergies · more than one study or a screen for writing study criteria · real email delivery · deleting anything · live-updating board · deployment.
+Booking or editing appointments (seeded) · passwords, password reset, OAuth, two-factor authentication · fine-grained permissions · prescriptions, billing, messaging, notifications · editing diagnoses, medications or allergies · more than one study or a screen for writing study criteria · real email delivery · deleting anything · push updates (websockets/SSE; the board polls instead) · deployment.

@@ -1,15 +1,20 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatTime, minutesSince, shortName } from "@/lib/format";
+import { formatTime, formatTimeWithSeconds, minutesSince, shortName } from "@/lib/format";
 import { requireUser } from "@/lib/require-user";
 import type { Role } from "@/lib/roles";
 import { STAGE_LABEL, VISIT_STAGES, isWaiting, type VisitStage } from "@/lib/visit-stages";
 import { type BoardRow, getBoard } from "@/server/queries";
+import { AutoRefresh } from "./auto-refresh";
 import { BoardRowActions } from "./row-actions";
 
 // Per-user, session-gated page: render on the server before sending (no instant shell).
 export const instant = false;
+
+/** How often the board re-fetches (polling for now; enough for one small clinic). Kept here, not in the
+ * "use client" file: a server component can't read plain values exported from a client module. */
+const BOARD_POLL_MS = 10_000;
 
 /** Tabs (SPEC §10.1). "mine" is each role's own queue. */
 const MY_QUEUE: Record<Role, VisitStage[] | null> = {
@@ -65,9 +70,15 @@ export default async function BoardPage({ searchParams }: PageProps<"/board">) {
     <main className="mx-auto w-full max-w-7xl px-4 py-8">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold">Visit board · today</h1>
-        <Link href={`/board?tab=${tab}`} className="text-sm underline underline-offset-4" prefetch={false}>
-          Refresh
-        </Link>
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <AutoRefresh intervalMs={BOARD_POLL_MS} />
+          <span data-testid="board-updated" title={`Refreshes every ${BOARD_POLL_MS / 1000} seconds while this tab is open`}>
+            Updated {formatTimeWithSeconds(now)} · every {BOARD_POLL_MS / 1000}s
+          </span>
+          <Link href={`/board?tab=${tab}`} className="text-foreground underline underline-offset-4" prefetch={false}>
+            Refresh now
+          </Link>
+        </div>
       </div>
 
       <nav aria-label="Filter by stage" className="mb-4 flex flex-wrap gap-1 rounded-lg bg-muted p-1 text-sm">
