@@ -27,7 +27,7 @@ Then pick how you want to see it:
 | Command | What you get |
 | --- | --- |
 | `bun run test:e2e:report` | **Easiest to review.** Runs everything while recording, then opens an HTML report. Every test has its steps, screenshots, a **video for each person signed in** (e.g. reception, nurse and doctor in the patient-journey test) and a **full trace** ("View Trace": scrub through each action with the page as it was). Stop the report server with Ctrl-C |
-| `bun run test:e2e:watch` | Watch it live: a real Chrome window, slowed down (500 ms per action) so you can follow each click and keystroke. A new window opens for each person who signs in. Takes a few minutes |
+| `bun run test:e2e:watch` | Watch it live: a real Chrome window, slowed down (2 s per action) so you can follow each click and keystroke. A new window opens for each person who signs in. Takes a while at this speed: run one test with `bun run test:e2e:watch -g "walk-in"` |
 | `bun run test:e2e:ui` | Playwright's UI mode: pick any test, run it, watch it live and step back and forth through its timeline |
 | `bun run test:e2e` | Headless and fast (~40 s plus the build); just the pass/fail list |
 
