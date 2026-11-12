@@ -535,6 +535,13 @@ Playwright, in `e2e/`, one file per area: auth, visit flow, results, study, acce
 
 ## 13. README (written in slice 1:45–1:52)
 
+> **As built:** the README is kept short for reviewers:
+> - run steps and staff emails
+> - a **"Review it in 5 minutes"** section: the recorded e2e run, plus a table mapping each PRD success criterion to where to see it and which test checks it
+> - decisions, known limits and a build summary
+>
+> The full test guide is in [`docs/testing.md`](./docs/testing.md), and the slice-by-slice build log and fresh-clone run are in [`docs/build-log.md`](./docs/build-log.md). Everything listed below is still covered across the three files.
+
 Must contain:
 
 1. **Requirements:** Docker Desktop running, Bun 1.1+.
