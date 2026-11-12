@@ -167,8 +167,19 @@ Built with AI in one session on Nov 12, 2026. Each slice was checked before the 
 | Visit stage machine | (part of 0:45–1:10) | 16:02–16:07 (~5 min) | #11 | DB tests incl. 10 rounds × 5 concurrent "take patient": exactly one wins |
 | Server actions (visits, results, checkout, study) | (spread over 0:45–1:45) | 16:07–16:18 (~11 min) | #12 | 54 DB tests incl. untick-vs-complete race; mutation checks |
 | All six screens | 0:45–1:52 | 16:18–16:34 (~16 min) | #13 | Playwright: one patient through every role; checkout blocked, including from a stale page; result leaves the list; approve → consent stays Unknown; reached → still Unknown; consent recorded |
-| README | 1:45–1:52 | 16:34– | this PR | — |
-| Fresh-clone run test | 1:52–2:00 | — | — | — |
+| README | 1:45–1:52 | 16:34–16:42 (~8 min) | #14 | Every claim checked against code and seed; doc links resolve |
+| *Extra, on request:* board polling | — | 16:42–16:47 (~5 min) | #15 | Live update without reload; paused while hidden; "Refresh now" |
+| *Extra, on request:* cleaner, responsive UI | — | 16:47–17:05 (~18 min) | #15 | Screenshots; no sideways overflow at 390/768/1280 px for every role (42 checks) |
+| *Extra, on request:* Playwright e2e suite | — | 17:05–17:19 (~14 min) | #16 | 16/16 on 4 runs; a consent mutation is caught |
+| *Extra, on request:* walk-ins | — | 17:19–17:28 (~9 min) | #17 | DB tests + e2e; 17/17 twice |
+| Fresh-clone run test + final review | 1:52–2:00 | 17:30–17:58 (~28 min) | #17 | See below |
+
+**Fresh-clone run (Nov 12, 2026):**
+- **Setup:** cloned from GitHub into an empty folder, wiped the database with `docker compose down -v`, then followed this README exactly. Steps 1–4 took ~7 s: containers healthy, 585 packages, tables created, seed 10/10 expected statuses (4 possible match, 4 needs check, 22 no match).
+- **Step 5:** port 3000 was taken by another dev server. `bun dev` moved to 3001 as described, and the README's fix (set `BETTER_AUTH_URL`) worked. In the browser: `/` → sign-in → link clicked **in Mailpit's web inbox** → reception board (7 in My queue). A walk-in added through the dialog showed as Checked in, 0 min.
+- **Tests:** `bun test` 16/16 · `bun run test:db` 58/58 · `lint`, `typecheck`, `build` pass · `bun run test:e2e` **17/17**.
+
+**Time:** the PRD's in-scope build (spec through README) took **~1 h 28 min** (15:14–16:42), inside the 2-hour budget. Polling, the UI pass, the e2e suite and walk-ins were added afterwards on request, and the final review ran last; the whole session was ~2 h 45 min.
 
 **What was cut:** nothing from the PRD's in-scope list.
 
