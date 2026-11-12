@@ -15,7 +15,7 @@ Requirements: Docker Desktop running, Bun 1.1+.
 docker compose up -d          # Postgres on 5432, Mailpit on 1025/8025
 bun install
 cp .env.example .env.local
-bun run db:push               # creates clinic + auth tables
+bun run db:push && bun run seed   # creates the tables, seeds patients and 6 staff accounts
 bun dev                       # http://localhost:3000
 ```
 
@@ -27,7 +27,8 @@ bun dev                       # http://localhost:3000
 | --- | --- |
 | `bun dev` | Next.js dev server |
 | `bun run db:push` | Push the Drizzle schema to Postgres |
+| `bun run seed` | Reset and seed synthetic data, run study matching, print staff emails |
 | `bun run auth:generate` | Regenerate `src/db/auth-schema.ts` from the Better Auth config (output is committed) |
 | `bun run typecheck` | Generate route types and run `tsc` |
 | `bun run lint` | ESLint |
-| `bun test` | Unit tests |
+| `bun test` | Matcher unit tests |

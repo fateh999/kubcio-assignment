@@ -10,7 +10,8 @@
     "db:push": "drizzle-kit push",
     "auth:generate": "auth generate --config src/lib/auth.ts --output src/db/auth-schema.ts --yes",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "seed": "bun --env-file=.env.local src/db/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
