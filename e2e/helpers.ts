@@ -1,7 +1,11 @@
 import { execSync } from "node:child_process";
-import { type Browser, type BrowserContext, type Page, expect } from "@playwright/test";
+import { unlink } from "node:fs/promises";
+import { type Browser, type BrowserContext, type Page, expect, test } from "@playwright/test";
 
 export const MAILPIT_URL = process.env.MAILPIT_URL ?? "http://localhost:8025";
+
+/** `bun run test:e2e:report` sets this: record a video of every signed-in browser, attached to the test. */
+const RECORD = process.env.E2E_RECORD === "1";
 
 /** Seeded staff (SPEC §11). */
 export const STAFF = {
@@ -47,8 +51,24 @@ export async function requestLink(page: Page, email: string): Promise<string> {
 
 /** A fresh browser (own cookies) signed in as `email` through the real magic-link flow. */
 export async function signedIn(browser: Browser, email: string): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.newContext();
+  const info = test.info();
+  const context = await browser.newContext(
+    RECORD ? { recordVideo: { dir: info.outputPath("videos"), size: { width: 1280, height: 800 } } } : {},
+  );
   const page = await context.newPage();
+  if (RECORD) {
+    // Playwright's `video` option only covers its own default context, so attach these by hand,
+    // labelled by who is signed in. The video file is written when the context closes.
+    const close = context.close.bind(context);
+    context.close = async (options) => {
+      const video = page.video();
+      await close(options);
+      if (!video) return;
+      const path = await video.path();
+      await info.attach(`video: ${email}`, { path, contentType: "video/webm" }); // copies it into the report
+      await unlink(path).catch(() => {});
+    };
+  }
   const link = await requestLink(page, email);
   await page.goto(link);
   await page.waitForURL((u) => !u.pathname.startsWith("/api/") && u.pathname !== "/");

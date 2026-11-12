@@ -531,6 +531,7 @@ Playwright, in `e2e/`, one file per area: auth, visit flow, results, study, acce
 - **Data:** each file re-seeds first.
 - **Sign-in:** through the real form, reading the magic link from Mailpit's API.
 - **Proof it catches regressions:** if approval also sets consent, the study test fails.
+- **Ways to watch it** (for reviewers): `test:e2e:report` records a video for each signed-in person, screenshots and a full trace of every test into the HTML report (`E2E_RECORD=1`); `test:e2e:watch` runs headed with `slowMo` 500 ms (`E2E_SLOWMO`); `test:e2e:ui` opens Playwright's UI mode. Plain `test:e2e` stays headless.
 
 ## 13. README (written in slice 1:45–1:52)
 
