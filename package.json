@@ -13,7 +13,10 @@
     "test": "bun test",
     "seed": "bun --env-file=.env.local src/db/seed.ts",
     "test:db": "bun test --env-file=.env.local ./tests-db",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:e2e:watch": "E2E_SLOWMO=500 playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "E2E_RECORD=1 playwright test || true; playwright show-report"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

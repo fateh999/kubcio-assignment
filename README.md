@@ -57,10 +57,18 @@ bun install
 cp .env.example .env.local        # if you haven't already
 bun run db:push
 bunx playwright install chromium  # once
-bun run test:e2e                  # ~2 min including the production build
 ```
 
-It builds the app and serves it on its own port (**3100**), so it doesn't clash with a dev server on 3000. Each spec file **re-seeds the database** first, so run it on a database you don't mind resetting. A failure leaves a trace, screenshot and HTML report (`bunx playwright show-report`).
+Then pick how you want to see it:
+
+| Command | What you get |
+| --- | --- |
+| `bun run test:e2e:report` | **Easiest to review.** Runs everything while recording, then opens an HTML report. Every test has its steps, screenshots, a **video for each person signed in** (e.g. reception, nurse and doctor in the patient-journey test) and a **full trace** ("View Trace": scrub through each action with the page as it was). Stop the report server with Ctrl-C |
+| `bun run test:e2e:watch` | Watch it live: a real Chrome window, slowed down (500 ms per action) so you can follow each click and keystroke. A new window opens for each person who signs in. Takes a few minutes |
+| `bun run test:e2e:ui` | Playwright's UI mode: pick any test, run it, watch it live and step back and forth through its timeline |
+| `bun run test:e2e` | Headless and fast (~40 s plus the build); just the pass/fail list |
+
+Every mode builds the app and serves it on its own port (**3100**), so it doesn't clash with a dev server on 3000. Each spec file **re-seeds the database** first, so run it on a database you don't mind resetting. Afterwards `bun run seed` gives you a clean seeded state again.
 
 | File | PRD success criteria covered |
 | --- | --- |
