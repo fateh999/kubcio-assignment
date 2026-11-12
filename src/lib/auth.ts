@@ -9,6 +9,9 @@ import { MAIL_FROM, mailer } from "@/lib/mailer";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  // Better Auth rate-limits in production (magic link: 5 requests/verifications per minute per IP).
+  // AUTH_RATE_LIMIT=off disables it. Only the e2e test server sets this; never set it for real use.
+  rateLimit: process.env.AUTH_RATE_LIMIT === "off" ? { enabled: false } : undefined,
   plugins: [
     magicLink({
       // Only staff the admin has added can sign in.

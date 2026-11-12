@@ -5,7 +5,7 @@ A working prototype for a small clinic. It covers three things:
 - test results waiting for the doctor's review
 - patients who may suit a diabetes study, without ever treating a match as eligibility or consent
 
-All data is synthetic. Everything runs on your machine: no accounts, API keys or internet connection are needed.
+All data is synthetic. Everything runs on your machine: no accounts or API keys. Internet is needed only for the first install (packages, Docker images and the font).
 
 - [PRD](./Clinic%20Management%20Prototype%20—%20PRD.md): what the clinic asked for
 - [Build spec](./SPEC.md): how it's built, including where the PRD contradicts itself (§16)
@@ -14,13 +14,15 @@ All data is synthetic. Everything runs on your machine: no accounts, API keys or
 
 **Requirements:** Docker Desktop running, Bun 1.1+.
 
-1. `docker compose up -d`: starts Postgres on 5432 and Mailpit on 1025 (SMTP) and 8025 (inbox)
+1. `docker compose up -d --wait`: starts Postgres on 5432 and Mailpit on 1025 (SMTP) and 8025 (inbox), and waits until Postgres is ready
 2. `bun install`
 3. `cp .env.example .env.local`: ships ready to use (`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL=http://localhost:3000`, SMTP on localhost:1025)
 4. `bun run db:push && bun run seed`: creates the clinic and auth tables, seeds ~30 patients and today's visits, creates the 6 staff accounts, and runs study matching
 5. `bun dev`, open http://localhost:3000, enter one of the staff emails below, and click the link in **Mailpit at http://localhost:8025**
 
 `docker compose down -v` wipes the database for a fresh start. `bun run seed` alone resets the data to the seeded state.
+
+**If port 3000 is taken**, `bun dev` quietly starts on another port, but sign-in links still point at `http://localhost:3000` (`BETTER_AUTH_URL` in `.env.local`). Either free port 3000, or set `BETTER_AUTH_URL` to the port `bun dev` prints and restart it.
 
 ### Staff accounts
 
@@ -41,10 +43,34 @@ To try two roles at once (e.g. reception and nurse), use a second browser or a p
 
 | Command | What it runs | Needs |
 | --- | --- | --- |
-| `bun test` | Study matcher (all 6 PRD edge cases; missing data never gives *possible match*; no eligibility wording) and visit-stage rules | Nothing |
-| `bun run test:db` | Against Postgres: stage transitions with concurrent staff; every server action's rules (role, stage, "only the assigned nurse/doctor", review/call/consent independence); checks that each action is guarded by the roles in the spec | `docker compose up -d` and step 4 |
+| `bun test` | Study matcher (all 6 PRD edge cases; missing data never gives *possible match*; no eligibility wording) and visit-stage rules | `bun install` |
+| `bun run test:db` | Against Postgres: stage transitions with concurrent staff; every server action's rules (role, stage, "only the assigned nurse/doctor", review/call/consent independence); checks that each action is guarded by the roles in the spec | Docker up and `bun run db:push` (the tests create and remove their own data) |
+| `bun run test:e2e` | **End-to-end in a real browser (Playwright):** every PRD success criterion, signing in through real magic links from Mailpit. See below | Docker up, `.env.local`, `bun run db:push`, and once: `bunx playwright install chromium` |
 
 `bun run lint`, `bun run typecheck` and `bun run build` also pass.
+
+### End-to-end tests (for reviewers)
+
+```bash
+docker compose up -d --wait
+bun install
+cp .env.example .env.local        # if you haven't already
+bun run db:push
+bunx playwright install chromium  # once
+bun run test:e2e                  # ~2 min including the production build
+```
+
+It builds the app and serves it on its own port (**3100**), so it doesn't clash with a dev server on 3000. Each spec file **re-seeds the database** first, so run it on a database you don't mind resetting. A failure leaves a trace, screenshot and HTML report (`bunx playwright show-report`).
+
+| File | PRD success criteria covered |
+| --- | --- |
+| `e2e/auth.spec.ts` | Signed-out redirect (real 307); an unknown email gets the same message and its link is refused; each role lands on its view; a used link is refused; nurse refused `/admin`, reception refused the doctor page and results; admin adds staff (invite email), changes role, deactivates (open session ends, new link refused) and reactivates; admin can't deactivate themselves |
+| `e2e/visit-flow.spec.ts` | Board shows stage, who's handling, minutes waiting, urgent first; **one patient through every role** with the handoff shown first to the doctor; checkout blocked while a task is open, including from a **stale page** (server refuses); the board **updates on its own** when someone else acts |
+| `e2e/results.spec.ts` | Unreviewed results oldest first; marking one removes it and the count drops; nurses can't mark |
+| `e2e/study.spec.ts` | Possible match / needs check with evidence, no eligibility wording; approve → *Needs call*, **consent Unknown**; reached → still Unknown; reception records consent (with who); re-run keeps review/call/consent; dismissed patients never reach the call list |
+| `e2e/access.spec.ts` | Reception's raw server responses (board, checkout, study) contain no diagnoses, medications, allergies, results or notes; the admin's board is read-only |
+
+The test server runs with `AUTH_RATE_LIMIT=off`. The suite signs in dozens of times a minute, and Better Auth's production limit is 5 magic-link requests per minute per IP. Never set it for real use.
 
 ## Walkthrough
 
@@ -107,6 +133,7 @@ Where the PRD left a decision open we made one so the prototype works. Each row 
 - **The board updates by polling, not push.** It refreshes every 10 seconds while the tab is open (paused when the tab is hidden), so other staff's changes can take up to 10 s to appear; **Refresh now** forces it. Websockets/SSE are out of scope.
 - **Times use the server's local time zone.** "Today" means the server's calendar day.
 - **Magic links expire after 5 minutes** (Better Auth's default) and work once.
+- **Sign-in is rate-limited in production builds**: 5 magic-link requests or clicks per minute per IP (Better Auth's default; off in `bun dev`). Over the limit, the sign-in page says so.
 - Out of scope, as in the PRD: booking or editing appointments, password reset, 2FA, prescriptions, billing, notifications, editing diagnoses/medications/allergies, more than one study, deployment.
 
 ## How it's built
