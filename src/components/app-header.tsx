@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/require-user";
 import { isRole, type Role } from "@/lib/roles";
+import { countUnreviewedResults } from "@/server/queries";
 import { SignOutButton } from "./sign-out-button";
 
 // Only links the signed-in role may open (SPEC §6.1).
@@ -22,6 +23,8 @@ export async function AppHeader() {
   const user = await getCurrentUser();
   if (!user || user.banned || !isRole(user.role)) return null;
   const role = user.role;
+  // "Results (8)" for the roles that can see results (SPEC §10.4).
+  const unreviewed = role === "nurse" || role === "doctor" ? await countUnreviewedResults() : null;
 
   return (
     <header className="border-b">
@@ -33,6 +36,7 @@ export async function AppHeader() {
           {LINKS.filter((l) => l.roles.includes(role)).map((l) => (
             <Link key={l.href} href={l.href} className="text-muted-foreground hover:text-foreground">
               {l.label}
+              {l.href === "/results" && unreviewed !== null ? ` (${unreviewed})` : ""}
             </Link>
           ))}
         </nav>
