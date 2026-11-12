@@ -1,11 +1,69 @@
-import { Placeholder } from "@/components/placeholder";
+import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDate } from "@/lib/format";
 import { requireUser } from "@/lib/require-user";
+import { getUnreviewedResults } from "@/server/queries";
+import { MarkReviewedButton } from "../visits/[id]/doctor/doctor-work";
 
 // Per-user, session-gated page: render on the server before sending (no instant shell).
 export const instant = false;
 
-// Built in #4 (FR4 · SPEC §10.4).
-export default async function Page() {
-  await requireUser(["nurse", "doctor"]);
-  return <Placeholder title="Results to review" issue={4} spec="FR4 · SPEC §10.4" />;
+// Results to review (FR4 · SPEC §10.4). Nurse and doctor can see it; only a doctor marks reviewed.
+export default async function ResultsPage() {
+  const me = await requireUser(["nurse", "doctor"]);
+  const rows = await getUnreviewedResults(new Date());
+  const isDoctor = me.role === "doctor";
+
+  return (
+    <main className="mx-auto w-full max-w-5xl px-4 py-8">
+      <h1 className="mb-1 text-2xl font-semibold">Results to review</h1>
+      <p className="mb-6 text-sm text-muted-foreground">
+        {rows.length} unreviewed, oldest first.{!isDoctor && " Only a doctor can mark a result reviewed."}
+      </p>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Patient</TableHead>
+            <TableHead>Test</TableHead>
+            <TableHead>Value</TableHead>
+            <TableHead>Resulted</TableHead>
+            {isDoctor && <TableHead className="text-right">Review</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                Nothing waiting for review.
+              </TableCell>
+            </TableRow>
+          )}
+          {rows.map((r) => (
+            <TableRow key={r.id} data-testid={`result-${r.patientName}-${r.test}`}>
+              <TableCell className="font-medium">
+                {isDoctor && r.todayVisitId ? (
+                  <Link href={`/visits/${r.todayVisitId}/doctor`} className="underline underline-offset-4">
+                    {r.patientName}
+                  </Link>
+                ) : (
+                  r.patientName
+                )}
+              </TableCell>
+              <TableCell>{r.test}</TableCell>
+              <TableCell>
+                {r.value}
+                {r.unit ? ` ${r.unit}` : ""}
+              </TableCell>
+              <TableCell>{formatDate(r.resultedAt)}</TableCell>
+              {isDoctor && (
+                <TableCell className="text-right">
+                  <MarkReviewedButton resultId={r.id} label={`Mark ${r.patientName} ${r.test} reviewed`} />
+                </TableCell>
+              )}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </main>
+  );
 }

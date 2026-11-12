@@ -362,6 +362,8 @@ export function matchPatient(patient: MatcherPatient, today: string /* "YYYY-MM-
 
 Uses shadcn components throughout. Times are shown in local time, `HH:mm`.
 
+Read queries live in `src/server/queries.ts`, one per screen. Each selects only what its screen may show, so reception's board, checkout and study tabs never load diagnoses, medications, allergies, results, notes or study evidence. Buttons call the §8 actions; on an error (e.g. someone else moved the patient) the page shows the message and refreshes.
+
 ### 10.1 Visit board — `/board` (FR1)
 
 - **Scope:** visits whose `appointmentAt` falls on today (local date).
@@ -369,7 +371,7 @@ Uses shadcn components throughout. Times are shown in local time, `HH:mm`.
   - *Minutes waiting* = `now − arrivedAt` in whole minutes, for stages `checked_in` through `ready_for_checkout`; blank for `scheduled` and `done`. Rendered on the server with a "Refresh" button. Live updating is out of scope.
   - *Handled by:* "With nurse · Priya" (nurse's name while `with_nurse`), "With doctor · Dr Khan" (while `with_doctor`). In later stages it shows who last handled the patient (e.g. "Seen by Dr Khan").
 - **Sort:** `urgent DESC, arrivedAt ASC NULLS LAST, appointmentAt ASC`. Appointment time is a tiebreak for not-yet-arrived rows and is shown for reference; it never moves an arrived patient.
-- **Filter:** Tabs `All · Scheduled · Checked in · With nurse · Ready for doctor · With doctor · Ready for checkout · Done`. Default tab by `view`:
+- **Filter:** Tabs `All · Scheduled · Checked in · With nurse · Ready for doctor · With doctor · Ready for checkout · Done`. They're links (`/board?tab=…`) rather than the client-side Tabs component, so the filter survives a refresh and the board stays a server-rendered page. Default tab by `view`:
   - `reception` → shows `scheduled`, `checked_in` and `ready_for_checkout` together ("My queue")
   - `nurse` → `checked_in`
   - `doctor` → `ready_for_doctor`

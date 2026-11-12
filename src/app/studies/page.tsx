@@ -1,11 +1,28 @@
-import { Placeholder } from "@/components/placeholder";
 import { requireUser } from "@/lib/require-user";
+import { getCallList, getConsentList, getStudyReviewList } from "@/server/queries";
+import { ReceptionStudyTabs } from "./reception-tabs";
+import { ReviewList } from "./review-list";
 
 // Per-user, session-gated page: render on the server before sending (no instant shell).
 export const instant = false;
 
-// Built in #5 (FR6 · SPEC §10.6).
-export default async function Page() {
-  await requireUser(["doctor", "receptionist"]);
-  return <Placeholder title="Diabetes study" issue={5} spec="FR6 · SPEC §10.6" />;
+// Diabetes study (FR6 · SPEC §10.6). Doctors review; reception calls and records consent.
+// Reception's queries never load evidence or missing items (they contain diagnoses).
+export default async function StudiesPage() {
+  const me = await requireUser(["doctor", "receptionist"]);
+
+  return (
+    <main className="mx-auto w-full max-w-6xl px-4 py-8">
+      <h1 className="mb-1 text-2xl font-semibold">Diabetes study</h1>
+      <p className="mb-6 text-sm text-muted-foreground">Criteria from the clinic: adult and a documented diagnosis of diabetes.</p>
+      {me.role === "doctor" ? (
+        <ReviewList rows={await getStudyReviewList()} />
+      ) : (
+        <ReceptionStudyTabs callList={await getCallList()} consentList={await getConsentList()} />
+      )}
+      <p className="mt-8 border-t pt-4 text-sm text-muted-foreground">
+        A possible match only means the record suggests this patient may suit the study. It is not a decision and not consent.
+      </p>
+    </main>
+  );
 }
